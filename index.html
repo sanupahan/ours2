@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Cinzel:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Couple Diary 💖</title>
+  <style>
+    :root {
+      --bg-light: #0a0a0a;
+      --bg-dark: #1e1e1e;
+      --text-light: #000;
+      --text-dark: #fff;
+      --entry-bg-light: #1a0b0b;
+      --entry-bg-dark: #333;
+      --accent: #8b0000;
+    }
+
+    body {
+      font-family: 'Playfair Display', serif;
+      background: var(--bg-light);
+      color: var(--text-light);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    h1 {
+      margin-top: 20px;
+      color: var(--accent);
+      font-size: 3rem; font-family: 'Great Vibes', cursive; text-shadow: 0 0 15px #8b0000;
+    }
+
+    .entry-form, .login-form {
+      background: #ffffff;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+    }
+
+    body.dark .entry-form, body.dark .login-form {
+      background: #2c2c2c;
+    }
+
+    textarea, input[type="password"], input[type="file"], input[type="date"] {
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-radius: 16px;
+  box-shadow: 0 0 12px #440022;
+  transition: all 0.3s ease;
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 10px;
+      background: #fff;
+    }
+
+    body.dark textarea,
+    body.dark input[type="password"],
+    body.dark input[type="file"],
+    body.dark input[type="date"] {
+      background: #444;
+      color: white;
+      border: 1px solid #777;
+    }
+
+    select, button {
+      margin-top: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #ff69b4;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #d63384;
+    }
+
+    .entry {
+      background: var(--entry-bg-light);
+      border-left: 4px solid var(--accent);
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    body.dark .entry {
+      background: var(--entry-bg-dark);
+    }
+
+    .entry img {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 12px;
+    }
+
+    .entry p {
+      margin: 4px 0;
+    }
+
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      transform: rotate(45deg);
+      animation: float 1.5s ease-out forwards;
+    }
+
+    .heart::before, .heart::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+    }
+
+    .heart::before {
+      top: -10px;
+      left: 0;
+    }
+
+    .heart::after {
+      left: -10px;
+      top: 0;
+    }
+
+    @keyframes float {
+      0% { opacity: 1; transform: translateY(0) rotate(45deg); }
+      100% { opacity: 0; transform: translateY(-100px) rotate(45deg); }
+    }
+
+    .toggle-btn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #222;
+      color: white;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="toggle-btn" onclick="toggleDarkMode()">🌓 Toggle Mode</div>
+  <h1>Our Couple Diary 💖</h1>
+
+  <div id="login" class="login-form">
+    <input type="password" id="password" placeholder="Enter the secret password..." />
+    <button onclick="checkPassword()">Unlock Diary</button>
+  </div>
+
+  <div id="diary" style="display:none">
+    <div class="entry-form">
+      <select id="author">
+        <option value="Pahan">Pahan</option>
+        <option value="Sanuthi">Sanuthi</option>
+      </select>
+      <input type="date" id="entryDate" />
+      <textarea id="diaryText" placeholder="Write something lovely..."></textarea>
+      <input type="file" id="photo" accept="image/*" />
+      <button onclick="saveEntry()">Save Entry</button>
+    </div>
+    <div id="entries"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyAG8JL9ULNvcIXDDimwqDrnoZkZg2sUFv4",
+  authDomain: "sanu-diary.firebaseapp.com",
+  databaseURL: "https://sanu-diary-default-rtdb.firebaseio.com",
+  projectId: "sanu-diary",
+  storageBucket: "sanu-diary.appspot.com",
+  messagingSenderId: "831589333450",
+  appId: "1:831589333450:web:b4645049bf50a0e3463733",
+  measurementId: "G-LBVCWMJE94"
+};
+
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const entriesDiv = document.getElementById("entries");
+    const diaryDiv = document.getElementById("diary");
+    const loginDiv = document.getElementById("login");
+    const correctPassword = "love2025";
+
+    function checkPassword() {
+      const input = document.getElementById("password").value;
+      if (input === correctPassword) {
+        loginDiv.style.display = "none";
+        diaryDiv.style.display = "block";
+        loadEntries();
+      } else {
+        alert("Incorrect password 💔");
+      }
+    }
+
+    function createHearts() {
+      for (let i = 0; i < 5; i++) {
+        const heart = document.createElement("div");
+        heart.className = "heart";
+        heart.style.left = Math.random() * window.innerWidth + "px";
+        heart.style.top = "90%";
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 1500);
+      }
+    }
+
+    function saveEntry() {
+      const author = document.getElementById("author").value;
+      const text = document.getElementById("diaryText").value;
+      const date = document.getElementById("entryDate").value || new Date().toLocaleDateString();
+      const photoInput = document.getElementById("photo");
+      const file = photoInput.files[0];
+
+      if (!text.trim() && !file) return;
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const newEntry = { author, text, date, photo: e.target.result };
+          db.ref("diaryEntries").push(newEntry);
+          document.getElementById("diaryText").value = "";
+          document.getElementById("photo").value = "";
+          createHearts();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const newEntry = { author, text, date };
+        db.ref("diaryEntries").push(newEntry);
+        document.getElementById("diaryText").value = "";
+        createHearts();
+      }
+    }
+
+    function loadEntries() {
+      entriesDiv.innerHTML = "";
+      db.ref("diaryEntries").on("value", snapshot => {
+        entriesDiv.innerHTML = "";
+        const allEntries = snapshot.val();
+        if (!allEntries) return;
+        const entriesArray = Object.values(allEntries).reverse();
+        entriesArray.forEach(entry => {
+          const entryDiv = document.createElement("div");
+          entryDiv.className = "entry";
+          entryDiv.innerHTML = `
+            <p><strong>${entry.author}</strong> 🗓️ ${entry.date}</p>
+            <p>${entry.text}</p>
+            ${entry.photo ? `<img src="${entry.photo}" alt="Photo">` : ""}
+          `;
+          entriesDiv.appendChild(entryDiv);
+        });
+      });
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+  </script>
+</body>
+</html>
